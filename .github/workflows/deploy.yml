@@ -35,6 +35,14 @@ jobs:
       with:
           terraform_version: latest
 
+    # Create S3 bucket for Terraform state if it doesn't exist
+    - name: Create Terraform State Bucket
+      run: |
+        aws s3api head-bucket --bucket itmjgaleano.tfstates2025 2>/dev/null || \
+        aws s3api create-bucket --bucket itmjgaleano.tfstates2025 --region us-east-1
+        aws s3api put-bucket-versioning --bucket itmjgaleano.tfstates2025 --versioning-configuration Status=Enabled
+        aws s3api put-bucket-encryption --bucket itmjgaleano.tfstates2025 --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+
     # Deploy AWS Resources using Terraform
     - name: Deploy with Terraform
       run: terraform init && terraform apply --auto-approve
