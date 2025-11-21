@@ -43,6 +43,26 @@ jobs:
         aws s3api put-bucket-versioning --bucket itmjgaleano.tfstates2025 --versioning-configuration Status=Enabled
         aws s3api put-bucket-encryption --bucket itmjgaleano.tfstates2025 --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
 
+    # Create EC2 Key Pair if it doesn't exist
+    - name: Create EC2 Key Pair
+      run: |
+        KEY_NAME="ItmVSCodeLab1_Web_KeyPair_2025"
+
+        # Check if key pair already exists
+        if aws ec2 describe-key-pairs --key-names "$KEY_NAME" --region ${{ env.AWS_REGION }} 2>/dev/null; then
+          echo "Key pair '$KEY_NAME' already exists"
+        else
+          echo "Creating key pair '$KEY_NAME'"
+          aws ec2 create-key-pair \
+            --key-name "$KEY_NAME" \
+            --region ${{ env.AWS_REGION }} \
+            --query 'KeyMaterial' \
+            --output text > ${KEY_NAME}.pem
+
+          echo "Key pair created successfully"
+          echo "Note: Private key saved as ${KEY_NAME}.pem (for reference only, not uploaded)"
+        fi
+
     # Deploy AWS Resources using Terraform
     - name: Deploy with Terraform
       run: terraform init && terraform apply --auto-approve
